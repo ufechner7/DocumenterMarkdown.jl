@@ -6,6 +6,7 @@ on:
       - release-*
     tags: '*'
   pull_request:
+  workflow_dispatch:
 jobs:
   test:
     name: Julia ${{ matrix.version }} - ${{ matrix.os }} - ${{ matrix.arch }}
