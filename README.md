@@ -46,8 +46,8 @@ makedocs(format = Markdown(), ...)
 [docs-dev-img]: https://img.shields.io/badge/docs-dev-blue.svg
 [docs-dev-url]: https://DocumenterMarkdown.juliadocs.org/dev
 
-[gha-img]: https://github.com/JuliaDocs/DocumenterMarkdown.jl/actions/workflows/CI.yml/badge.svg?branch=master
-[gha-url]: https://github.com/JuliaDocs/DocumenterMarkdown.jl/actions/workflows/CI.yml
+[gha-img]: https://github.com/ufechner7/DocumenterMarkdown.jl/actions/workflows/CI.yml/badge.svg?branch=master
+[gha-url]: https://github.com/ufechner7/DocumenterMarkdown.jl/actions/workflows/CI.yml
 
-[codecov-img]: https://codecov.io/gh/JuliaDocs/DocumenterMarkdown.jl/branch/master/graph/badge.svg
-[codecov-url]: https://codecov.io/gh/JuliaDocs/DocumenterMarkdown.jl
+[codecov-img]: https://codecov.io/gh/ufechner7/DocumenterMarkdown.jl/branch/master/graph/badge.svg
+[codecov-url]: https://codecov.io/gh/ufechner7/DocumenterMarkdown.jl
