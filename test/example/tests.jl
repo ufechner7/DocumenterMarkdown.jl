@@ -72,4 +72,10 @@ build(path...) = read(joinpath(@__DIR__, "build", path...), String)
     @test occursin("[^longeq]:", style)
     @test count(r"!\[\]\([a-z]{7}\.(png|webp|jpeg|gif)\)", tutorial) == 4
     @test occursin(r"!\[\]\(julia\.svg\)|<svg", tutorial)
+
+    # the code block of an element of an extension is written as it was, an element
+    # without content leaves nothing
+    extension = build("extension.md")
+    @test occursin("```diagram\nA --> B\n```", extension)
+    @test !occursin("ScriptBlock", extension)
 end

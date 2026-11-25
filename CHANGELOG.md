@@ -9,6 +9,9 @@
   * links between pages and to local files are relative to the directory of the page
     that contains them (also in `@contents`); a link to the page itself without a
     fragment stays `#`;
+  * the elements of extensions of Documenter that replace a code block and keep it in a
+    field `codeblock` (e.g. the `mermaid` blocks of DocumenterMermaid) are written as that
+    code block; elements without content are left out without a warning;
   * `[text](@id name)` anchors around inline content are not written: the content is
     written without the anchor;
   * the entries of an `@index` with the same name are in the order of Documenter 1;

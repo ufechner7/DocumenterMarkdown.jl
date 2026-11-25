@@ -277,10 +277,20 @@ dropheaders(h::MarkdownStdlib.Header) =
 dropheaders(x) = x
 dropheaders(v::Vector) = map(dropheaders, v)
 
-# Everything else of Documenter is not supported; it is left out with a warning.
+# The other elements of Documenter and of its extensions.
 function render(io::IO, node::Node, element::Union{Documenter.AbstractDocumenterBlock,
                                                     Documenter.AbstractDocumenterInline},
                 page, doc)
-    @warn "DocumenterMarkdown: the element $(typeof(element)) on page " *
-          "'$(page.source)' is not supported and is left out."
+    if hasfield(typeof(element), :codeblock) &&
+       getfield(element, :codeblock) isa MarkdownAST.CodeBlock
+        # An extension that replaces a code block by an element of its own, e.g.
+        # DocumenterMermaid: the original code block is written, as it was.
+        code = Node(getfield(element, :codeblock))
+        render(io, code, code.element, page, doc)
+    elseif fieldcount(typeof(element)) == 0
+        # An element without content, e.g. a script that only the HTML output needs.
+    else
+        @warn "DocumenterMarkdown: the element $(typeof(element)) on page " *
+              "'$(page.source)' is not supported and is left out."
+    end
 end
