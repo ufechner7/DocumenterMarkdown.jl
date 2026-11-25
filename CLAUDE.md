@@ -72,6 +72,10 @@ julia +1.10 --project -e 'using Pkg; Pkg.test()'
 # save the generated Markdown as reference output in test/golden/ (after the tests)
 julia +1.10 --project test/make_golden.jl
 
+# build the example, render it with MkDocs and show it in the browser with LiveServer
+# (from the global Julia environment); see the header of the script for the variables
+bin/show_example
+
 # build the package's own docs (runs MkDocs when deploying; needs the Python packages
 # mkdocs, pygments and python-markdown-math)
 julia +1.10 --project=docs docs/make.jl

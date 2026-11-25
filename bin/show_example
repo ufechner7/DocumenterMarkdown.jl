@@ -1,0 +1,81 @@
+#!/usr/bin/env bash
+# SPDX-License-Identifier: MIT
+#
+# Render the example of the test suite (test/example) and show it in the web browser.
+#
+# 1. test/example/make.jl builds the example with DocumenterMarkdown (format =
+#    Markdown()); the Markdown pages are written to test/example/build.
+# 2. MkDocs turns the Markdown into HTML (a temporary site directory).
+# 3. LiveServer.jl, from the global Julia environment, serves the HTML and opens the
+#    browser. Stop the server with Ctrl+C; the temporary directory is removed then.
+#
+# Requirements: mkdocs on the PATH and LiveServer in the global Julia environment
+# (julia -e 'using Pkg; Pkg.add("LiveServer")'). On Ubuntu and Debian install MkDocs
+# with the system package manager: sudo apt install mkdocs python3-mdx-math
+# (python3-mdx-math is optional, without it equations are shown as text). A plain
+# `pip install` is refused there (PEP 668, "externally-managed-environment"); on other
+# systems use pipx (pipx install mkdocs --include-deps; pipx inject mkdocs
+# python-markdown-math) or a virtual environment with mkdocs on the PATH.
+#
+# Environment variables:
+#   BUILD_JULIA   Julia command that builds the example (default "julia +1.10")
+#   JULIA         Julia command that runs LiveServer (default "julia"); it must find
+#                 LiveServer in its global environment
+#   PORT          port of the web server (default 8000)
+#   SKIP_BUILD    set to 1 to show the Markdown of the last build without building again
+
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+BUILD_JULIA="${BUILD_JULIA:-julia +1.10}"
+JULIA="${JULIA:-julia}"
+PORT="${PORT:-8000}"
+BUILD_DIR="$ROOT/test/example/build"
+
+if ! command -v mkdocs >/dev/null 2>&1; then
+    echo "mkdocs not found. On Ubuntu: sudo apt install mkdocs python3-mdx-math" >&2
+    echo "(see the header of this script for other systems)" >&2
+    exit 1
+fi
+
+if [ "${SKIP_BUILD:-0}" != "1" ]; then
+    echo "Building the example with $BUILD_JULIA ..."
+    # shellcheck disable=SC2086  # BUILD_JULIA may hold arguments, e.g. "julia +1.10"
+    $BUILD_JULIA --project="$ROOT" "$ROOT/test/example/make.jl"
+fi
+
+if [ ! -f "$BUILD_DIR/index.md" ]; then
+    echo "No Markdown found in $BUILD_DIR; run without SKIP_BUILD=1." >&2
+    exit 1
+fi
+
+TMP="$(mktemp -d)"
+trap 'rm -rf "$TMP"' EXIT
+
+# the extension for equations is optional
+MATH=""
+if python3 -c "import mdx_math" >/dev/null 2>&1; then
+    MATH="  - mdx_math"
+fi
+
+cat > "$TMP/mkdocs.yml" <<YAML
+site_name: DocumenterMarkdown example
+theme: readthedocs
+docs_dir: $BUILD_DIR
+site_dir: $TMP/site
+extra_css:
+  - assets/Documenter.css
+markdown_extensions:
+  - extra
+  - tables
+  - fenced_code
+$MATH
+YAML
+
+echo "Rendering the Markdown with MkDocs ..."
+mkdocs build --quiet --config-file "$TMP/mkdocs.yml"
+
+echo "Serving $TMP/site at http://localhost:$PORT (stop with Ctrl+C) ..."
+# shellcheck disable=SC2086
+$JULIA -e 'using LiveServer; serve(dir=ARGS[1], port=parse(Int, ARGS[2]), launch_browser=true)' \
+    "$TMP/site" "$PORT"
