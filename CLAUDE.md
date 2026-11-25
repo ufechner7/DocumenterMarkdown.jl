@@ -58,8 +58,12 @@ and standard-library functions that need a newer Julia.
 ## Commands
 
 ```julia
-# run the tests (Pkg.test; there is no separate test environment, `Test` is an extra)
-julia --project -e 'using Pkg; Pkg.test()'
+# run the tests (Pkg.test; there is no separate test environment, `Test` is an extra).
+# Julia 1.10 is installed with juliaup but is not the default: use `+1.10`.
+julia +1.10 --project -e 'using Pkg; Pkg.test()'
+
+# save the generated Markdown as reference output in test/golden/ (after the tests)
+julia +1.10 --project test/make_golden.jl
 
 # build the package's own docs, then run MkDocs (needs the Python packages mkdocs,
 # pygments and python-markdown-math)

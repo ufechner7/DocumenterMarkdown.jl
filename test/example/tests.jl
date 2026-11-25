@@ -34,3 +34,42 @@ src_files = list_files(joinpath(@__DIR__, "src"))
     @test joinpath(@__DIR__, "build", "man", "data.csv") |> isfile
     @test joinpath(@__DIR__, "build", "man", "julia.svg") |> isfile
 end
+
+# The content of the generated Markdown, not only the existence of the files. The
+# strings are taken from the output of Documenter 0.27.25 (test/golden/, see
+# test/make_golden.jl), which a port to another Documenter version should reproduce.
+build(path...) = read(joinpath(@__DIR__, "build", path...), String)
+
+@testset "example build: content" begin
+    functions = build("lib", "functions.md")
+    index = build("index.md")
+    tutorial = build("man", "tutorial.md")
+    style = build("man", "style.md")
+
+    # headings with their anchors, and the legacy anchor with the suffix -1
+    @test occursin("<a id='Functions'></a>", functions)
+    @test occursin("<a id='Functions-1'></a>", functions)
+    @test occursin("# Functions", functions)
+
+    # a docstring: anchor, header with the binding and the category, body, source link
+    @test occursin("<a id='Main.Mod.func-Tuple{Any}' href='#Main.Mod.func-Tuple{Any}'>#</a>",
+                   functions)
+    @test occursin("**`Main.Mod.func`** &mdash; *Method*.", functions)
+    @test occursin("class='documenter-source'>source</a>", functions)
+    # cross-references use the extension .md
+    @test occursin("[`T`](functions.md#Main.Mod.T)", functions)
+    # headers inside docstrings are replaced by bold text
+    @test !occursin(r"^#+ .*\n.*\*\*`Main.Mod.func`\*\*"m, functions)
+
+    # the contents list: nested, with links to the .md pages
+    @test occursin("- [Documentation](index.md#Documentation)", index)
+    @test occursin("    - [Index Page](index.md#Index-Page)", index)
+
+    # code blocks, tables, admonitions, footnotes and images
+    @test occursin("```julia-repl\njulia> using Base.Meta", tutorial)
+    @test occursin("| object | implemented |      value |", tutorial)
+    @test occursin("!!! note \"Bulleted lists in admonitions\"", style)
+    @test occursin("[^longeq]:", style)
+    @test count(r"!\[\]\([a-z]{7}\.(png|webp|jpeg|gif)\)", tutorial) == 4
+    @test occursin(r"!\[\]\(julia\.svg\)|<svg", tutorial)
+end
