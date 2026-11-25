@@ -72,6 +72,11 @@ function copy_assets(doc::Documenter.Document)
         for each in readdir(assets)
             src = joinpath(assets, each)
             dst = joinpath(builddir, each)
+            if isfile(dst) && read(src) == read(dst)
+                # a rebuild without clean: the copy of the last build is the same,
+                # leave it alone (no warning, and a watcher sees no change)
+                continue
+            end
             ispath(dst) && @warn "DocumenterMarkdown: overwriting '$dst'."
             cp(src, dst; force = true)
         end
