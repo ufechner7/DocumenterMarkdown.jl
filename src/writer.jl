@@ -51,9 +51,15 @@ function render(doc::Documenter.Document, settings::Markdown=Markdown())
     @info "DocumenterMarkdown: rendering Markdown pages."
     copy_assets(doc)
     for (src, page) in doc.blueprint.pages
-        open(mdext(page.build), "w") do io
-            render(io, page.mdast.children, page, doc)
-        end
+        # Render in memory and move the finished file into place: a program that watches
+        # the build directory (MkDocs, Zensical) then never sees an empty or half
+        # written page, which it would take for a page without anchors.
+        io = IOBuffer()
+        render(io, page.mdast.children, page, doc)
+        path = mdext(page.build)
+        tmp = string(path, ".tmp")
+        write(tmp, take!(io))
+        mv(tmp, path; force = true)
     end
 end
 
