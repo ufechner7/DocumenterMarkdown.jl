@@ -42,6 +42,12 @@ using DocumenterMarkdown
 makedocs(format = Markdown(), ...)
 ```
 
+By default each docstring is written as an anchor, a bold name and the text. With
+`Markdown(docstrings = :details)` (or `:admonition`) it is written as a box with the name and
+the category as its title, which MkDocs or [Zensical](https://zensical.org) show with a header
+bar, and can fold (needs the extension `pymdownx.details`, or `admonition`); style the CSS
+class `docstring` as you like.
+
 [documenter]: https://github.com/JuliaDocs/Documenter.jl
 [upstream]: https://github.com/JuliaDocs/DocumenterMarkdown.jl
 [documenter-docs]: https://Documenter.juliadocs.org/stable/

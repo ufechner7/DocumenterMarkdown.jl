@@ -4,6 +4,9 @@
 
 * ![Breaking][badge-breaking] Requires Documenter 1 (it was 0.27) and Julia 1.10. The
   writer is rewritten for the MarkdownAST representation of the pages.
+* The new keyword `Markdown(docstrings = :admonition)` or `:details` writes each docstring
+  as a box (an admonition or a details block of the class `docstring`, with the name and the
+  category as the title) that can be styled with CSS; the default `:plain` is as before.
 * ![Breaking][badge-breaking] `pip` is removed (`Deps.pip` is gone in Documenter 1).
 * The output differs from that of version 0.2:
   * links between pages and to local files are relative to the directory of the page

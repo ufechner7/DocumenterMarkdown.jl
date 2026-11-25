@@ -9,12 +9,39 @@ end
 const MarkdownStdlib = _Markdown.Markdown
 
 """
-    Markdown()
+    Markdown(; docstrings = :plain)
 
 Output format for `makedocs(format = Markdown(), ...)`: one `.md` file per page in the
 build directory.
+
+The keyword `docstrings` selects how the docstrings of `@docs` and `@autodocs` blocks are
+written:
+
+- `:plain` (the default): an anchor and the name with the category in bold, then the
+  text of the docstring.
+- `:admonition`: a box, an admonition of the class `docstring` (`!!! docstring "title"`),
+  with the name and the category as the title and the docstring as the body.
+- `:details`: the same as a box that can be folded and is open at first
+  (`???+ docstring "title"`).
+
+The boxes need the Markdown extension `admonition` (`:admonition`) or
+`pymdownx.details` (`:details`) and can be styled with the CSS class `docstring`.
 """
 struct Markdown <: Documenter.Writer
+    docstrings::Symbol
+
+    function Markdown(; docstrings::Symbol=:plain)
+        docstrings in (:plain, :admonition, :details) ||
+            throw(ArgumentError("Markdown: `docstrings` must be :plain, :admonition or " *
+                                ":details, got :$docstrings"))
+        new(docstrings)
+    end
+end
+
+# The Markdown format of the document (it holds the settings of the writer).
+function markdown_settings(doc::Documenter.Document)
+    i = findfirst(f -> f isa Markdown, doc.user.format)
+    i === nothing ? Markdown() : doc.user.format[i]
 end
 
 # return the same file with the extension changed to .md
@@ -149,24 +176,44 @@ render(io::IO, node::Node, ::Documenter.DocsNodesBlock, page, doc) =
     render(io, node.children, page, doc)
 
 function render(io::IO, node::Node, docs::Documenter.DocsNode, page, doc)
-    # Docstring header based on the name of the binding and its category.
+    style = markdown_settings(doc).docstrings
     id = Documenter.anchor_label(docs.anchor)
-    anchor = "<a id='$id' href='#$id'>#</a>"
-    header = "**`$(Documenter.bindingstring(docs.object.binding))`** &mdash; " *
-             "*$(Documenter.doccat(docs.object))*."
-    # The blank line first: if the previous docstring has no source link, the anchor, an
-    # inline element, would otherwise continue its last paragraph.
-    println(io)
-    println(io, anchor, "\n", header, "\n\n")
+    name = Documenter.bindingstring(docs.object.binding)
+    category = Documenter.doccat(docs.object)
+    if style === :plain
+        # Docstring header based on the name of the binding and its category.
+        anchor = "<a id='$id' href='#$id'>#</a>"
+        header = "**`$name`** &mdash; *$category*."
+        # The blank line first: if the previous docstring has no source link, the anchor,
+        # an inline element, would otherwise continue its last paragraph.
+        println(io)
+        println(io, anchor, "\n", header, "\n\n")
+    else
+        # A box: the anchor for links, then an admonition or a details block with the
+        # name (a link to the anchor) and the category as its title.
+        title = replace("[`$name`](#$id) &mdash; $category", '"' => "&quot;")
+        println(io, "\n<a id='$id'></a>\n")
+        println(io, style === :details ? "???+" : "!!!", " docstring \"", title, "\"\n")
+    end
     # Body. May contain several concatenated docstrings.
     for (docstring, result) in zip(docs.mdasts, docs.results)
+        body = IOBuffer()
         md = dropheaders(stdlib_markdown(docstring.children, page, doc))
-        MarkdownStdlib.plain(io, md)
+        MarkdownStdlib.plain(body, md)
         # When a source link is available then print the link.
         url = Documenter.source_url(doc, result)
         if url !== nothing
             link = "<a target='_blank' href='$url' class='documenter-source'>source</a><br>"
-            println(io, "\n", link, "\n")
+            println(body, "\n", link, "\n")
+        end
+        text = String(take!(body))
+        if style === :plain
+            print(io, text)
+        else
+            # the body of the box is indented by 4 spaces
+            for line in split(text, '\n')
+                println(io, isempty(line) ? "" : "    " * line)
+            end
         end
     end
 end

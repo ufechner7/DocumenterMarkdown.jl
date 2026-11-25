@@ -109,3 +109,40 @@ end
         @test !occursin(r"[^\n]\n<a id='[^']+' href='#", page)
     end
 end
+
+# The docstrings as boxes: an admonition or a details block of the class `docstring`
+# with the name and the category as the title and the docstring indented below.
+@testset "docstrings as boxes" begin
+    @test_throws ArgumentError Markdown(docstrings=:unknown)
+    for (style, marker) in ((:admonition, "!!!"), (:details, "???+"))
+        mktempdir() do dir
+            mkpath(joinpath(dir, "src"))
+            write(joinpath(dir, "src", "index.md"), """
+                # Index
+
+                ```@meta
+                CurrentModule = $(Mod)
+                ```
+
+                ```@docs
+                func
+                T
+                ```
+                """)
+            makedocs(; root=dir, sitename="boxes", format=Markdown(docstrings=style),
+                     modules=[Mod], remotes=nothing, doctest=false,
+                     warnonly=[:cross_references, :missing_docs])
+            page = read(joinpath(dir, "build", "index.md"), String)
+            id = "Main.Mod.func"
+            # the anchor, the box with its title, and the indented body
+            @test occursin("\n<a id='$id'></a>\n", page)
+            @test occursin("\n$marker docstring \"[`Main.Mod.func`](#$id) &mdash; " *
+                           "Function\"\n", page)
+            @test occursin("\n    ```julia\n    func(x)\n    ```\n", page)
+            @test count("docstring \"", page) == 2
+            # nothing of the body is left at the start of a line
+            @test !occursin(r"^```julia"m, page)
+            @test !occursin("<a id='$id' href=", page)
+        end
+    end
+end
