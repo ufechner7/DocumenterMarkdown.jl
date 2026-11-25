@@ -10,33 +10,40 @@ in the build directory, which MkDocs then turns into HTML (see `docs/make.jl`,
 `docs/mkdocs.yml`). The backend was moved out of Documenter itself (commit "Move
 MarkdownWriter code here"). The package is small and not actively maintained.
 
-## Hard constraint: Documenter 0.27 only
+## Documenter 1 and MarkdownAST
 
-`Project.toml` pins `Documenter = "0.27.18"` and the code relies on internals of that
-series: `Documenter.Utilities.Selectors`, `Documenter.Documents`, `Anchors`,
-`Expanders`, `Builder`, and node types such as `Documents.DocsNode`, `IndexNode`,
-`ContentsNode`, `EvalNode`, `MultiOutput`, `RawNode`. These do not exist in the same
-form in Documenter 0.28 and later (the README says so), so do not "modernise" the code
-to a newer Documenter API and do not widen the compat bound without testing. Also
-supported are Julia 1.0 and later (CI runs 1.0, 1.6, 1 and nightly), so avoid syntax
-and standard-library functions that need a newer Julia.
+`Project.toml` requires `Documenter = "1"` (developed against 1.20) and Julia 1.10. In
+Documenter 1 a page is a MarkdownAST tree (`page.mdast`), not stdlib `Markdown` objects,
+and the writer is built on that. The old 0.27 API (`Documenter.Documents`, `Anchors`,
+`Utilities.Selectors`, `Deps.pip`) is gone; versions 0.2.x of this package are the
+Documenter 0.27 versions. `Documenter.Selectors`, `Documenter.FormatSelector` and
+`Documenter.Writer` are the extension points, `src/latex/LaTeXWriter.jl` of Documenter is
+the best example of a writer.
 
 ## Layout
 
 - `src/DocumenterMarkdown.jl`: the module. Registers the writer with Documenter by
-  defining `MarkdownFormat <: Documenter.Writers.FormatSelector` with `Selectors.order`,
+  defining `MarkdownFormat <: Documenter.FormatSelector` with `Selectors.order`,
   `Selectors.matcher` (true when the format is a `Markdown`) and `Selectors.runner`
-  (calls `render(doc, fmt)`). Also keeps `pip`, copied from Documenter's old `Deps`
-  module for `deploydocs(deps = Deps.pip(...))`. Exports `Markdown`.
-- `src/writer.jl`: the `Markdown <: Documenter.Writer` type and all `render` methods,
-  one per Documenter node type (`Anchor`, `DocsNode(s)`, `IndexNode`, `ContentsNode`,
-  `EvalNode`, `MultiCodeBlock`, `MultiOutput`, `Dict{MIME,Any}`, `RawNode`, ...), with
-  a generic fallback that calls `Markdown.plain`.
+  (calls `render(doc, fmt)`). Exports `Markdown`.
+- `src/writer.jl`: the `Markdown <: Documenter.Writer` type and the `render(io, node,
+  element, page, doc)` methods, one per Documenter element (`AnchoredHeader`,
+  `DocsNode`, `IndexNode`, `ContentsNode`, `EvalNode`, `MultiCodeBlock`, `MultiOutput`,
+  `RawNode`, ...). Plain MarkdownAST elements are converted to the standard library
+  `Markdown` (`stdlib_markdown`) and written with `Markdown.plain`. Documenter's own
+  inline elements (`PageLink`, `LocalLink`, `LocalImage`, `AnchoredInline`) cannot be
+  converted or deep-copied, so `copy_children!` replaces them by plain `Link`/`Image`
+  nodes (relative to the page) or their content. Other Documenter elements warn and
+  are left out.
 - `assets/`: files copied to `<build>/assets` by `copy_assets` at every build. The
   build errors if this directory is missing.
 - `test/runtests.jl` includes `test/example/make.jl` (a full `makedocs` run over
   `test/example/src/`, with the modules `Mod` and `AutoDocs` defined in that file) and
-  then `test/example/tests.jl` (assertions on the output).
+  then `test/example/tests.jl` (existence of the files and assertions on the content).
+- `test/golden/`: the output of Documenter 0.27.25 (version 0.2.2 of this package),
+  saved by `test/make_golden.jl`, for comparing the output of the writer; it contains
+  `rand()` and `@time` output of the fixtures, which differ at every run. The differences
+  to the current output are listed in `CHANGELOG.md`.
 - `docs/`: the package's own documentation, built with the package itself.
 
 ## Conventions in the code
@@ -65,13 +72,16 @@ julia +1.10 --project -e 'using Pkg; Pkg.test()'
 # save the generated Markdown as reference output in test/golden/ (after the tests)
 julia +1.10 --project test/make_golden.jl
 
-# build the package's own docs, then run MkDocs (needs the Python packages mkdocs,
-# pygments and python-markdown-math)
-julia --project=docs docs/make.jl
+# build the package's own docs (runs MkDocs when deploying; needs the Python packages
+# mkdocs, pygments and python-markdown-math)
+julia +1.10 --project=docs docs/make.jl
 ```
 
-The test suite builds a complete Documenter site, so a failure in `test/example/make.jl`
-is often a Documenter-version problem rather than a bug in `writer.jl`. Run Julia with
+The test suite builds a complete Documenter site; Documenter 1 turns problems of the
+pages into errors, so a failure in `test/example/make.jl` can be a problem of a page (see
+`warnonly` there) and not a bug in `writer.jl`. To check the output with MkDocs, run
+`mkdocs build` in `docs/` after `julia +1.10 --project=docs docs/make.jl` (needs the
+Python packages `mkdocs`, `pygments` and `python-markdown-math`). Run Julia with
 at most 8 threads (`-t 8`), never `-t auto`.
 
 ## Workflow

@@ -1,6 +1,6 @@
 name = "DocumenterMarkdown"
 uuid = "997ab1e6-3595-5248-9280-8efb232c3433"
-version = "0.3.0-DEV"
+version = "0.3.0"
 
 [deps]
 ANSIColoredPrinters = "a4c015fc-c6ff-483c-b24f-f7ea428134e9"

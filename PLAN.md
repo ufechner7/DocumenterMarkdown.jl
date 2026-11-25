@@ -61,14 +61,15 @@ Template: `src/latex/LaTeXWriter.jl` of Documenter 1.20, a non-HTML writer that 
    `test/golden/` are listed in `CHANGELOG.md`; the golden files stay those of
    Documenter 0.27.25. They also hold output that changes on every run (`rand()`,
    `@time` in the fixtures), which a diff has to ignore.
-5. **Docs, CI, release.**
-   - `docs/make.jl`: remove `Deps.pip` and the `deps`/`make` keywords of
-     `deploydocs`; build MkDocs in the CI workflow instead. Remove `pip` from
-     `src/DocumenterMarkdown.jl`.
-   - `.github/workflows/CI.yml`: Julia 1.10 and 1, current action versions.
-   - Update `README.md` (package status), `CHANGELOG.md` and `CLAUDE.md` (which still
-     says the code must stay on the Documenter 0.27 API).
-   - Bump `version` to 0.3.0.
+5. **Docs, CI, release (done).**
+   - `docs/make.jl`: `Deps.pip` is removed (`deps` and `make` of `deploydocs` still
+     exist in Documenter 1; `make` runs `mkdocs build`); the Python packages are
+     installed in the CI workflow. The dead `@ref` links of `docs/src/index.md` point to
+     the Documenter manual. `pip` is removed from `src/DocumenterMarkdown.jl`.
+   - `.github/workflows/CI.yml`: Julia 1.10, 1 and nightly, current action versions.
+   - `README.md`, `CHANGELOG.md` and `CLAUDE.md` updated; `version` is 0.3.0.
+   - Still to do: merge `documenter-1` into `master`, check that CI is green on
+     GitHub, register and tag 0.3.0.
 
 ## Done when
 
