@@ -129,5 +129,8 @@ example_doc = makedocs(
     modules = [Mod, AutoDocs],
     doctest = false,
     debug  = true,
+    # the pages contain links and footnotes that Documenter 1 reports as errors
+    # (e.g. "some:path" as a Windows path, a footnote without a definition)
+    warnonly = [:cross_references, :footnote],
 );
 

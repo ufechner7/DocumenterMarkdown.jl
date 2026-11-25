@@ -1,5 +1,20 @@
 # DocumenterMarkdown.jl changelog
 
+## Version `v0.3.0`
+
+* ![Breaking][badge-breaking] Requires Documenter 1 (it was 0.27) and Julia 1.10. The
+  writer is rewritten for the MarkdownAST representation of the pages.
+* ![Breaking][badge-breaking] `pip` is removed (`Deps.pip` is gone in Documenter 1).
+* The output differs from that of version 0.2:
+  * links between pages and to local files are relative to the directory of the page
+    that contains them (also in `@contents`); a link to the page itself without a
+    fragment stays `#`;
+  * `[text](@id name)` anchors around inline content are not written: the content is
+    written without the anchor;
+  * the entries of an `@index` with the same name are in the order of Documenter 1;
+  * fewer blank lines around docstrings and at the end of code blocks, and line
+    endings of the sources are normalized to LF (done by Documenter).
+
 ## Version `v0.2.1`
 
 * Declare compatibility with Documenter 0.26. ([#5][github-5])

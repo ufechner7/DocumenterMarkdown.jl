@@ -50,11 +50,17 @@ Template: `src/latex/LaTeXWriter.jl` of Documenter 1.20, a non-HTML writer that 
    paragraphs, code blocks, `@meta`/`@setup` (no output) and the links and images of a
    page. Everything else warns and is left out. Not done yet: `AnchoredInline`, all
    Documenter blocks (step 3).
-3. **Node coverage.** List every node type `LaTeXWriter.jl` handles and implement a
-   `render` method for each, plus a fallback that warns on unknown nodes instead of
-   erroring.
-4. **Compare.** Diff the new output against the golden files; fix regressions and
-   document each intended difference in `CHANGELOG.md`.
+3. **Node coverage (done).** `render` methods for `DocsNodesBlock`/`DocsNode`,
+   `IndexNode`, `ContentsNode`, `EvalNode`, `MultiOutput`/`MultiOutputElement`,
+   `MultiCodeBlock`, `RawNode`, `AnchoredHeader` and the links and images; the other
+   Documenter elements warn and are left out. `AnchoredInline` is replaced by its
+   content. The example suite had to be ported too (`Documenter.DOM`, an `@eval` that
+   returns `Markdown.MD`, `warnonly` for the links and footnotes that Documenter 1
+   reports as errors).
+4. **Compare (done).** All 37 tests pass on Documenter 1.20. The differences to
+   `test/golden/` are listed in `CHANGELOG.md`; the golden files stay those of
+   Documenter 0.27.25. They also hold output that changes on every run (`rand()`,
+   `@time` in the fixtures), which a diff has to ignore.
 5. **Docs, CI, release.**
    - `docs/make.jl`: remove `Deps.pip` and the `deps`/`make` keywords of
      `deploydocs`; build MkDocs in the CI workflow instead. Remove `pip` from
