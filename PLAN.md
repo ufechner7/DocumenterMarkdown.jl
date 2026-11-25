@@ -26,9 +26,14 @@ Template: `src/latex/LaTeXWriter.jl` of Documenter 1.20, a non-HTML writer that 
 
 - **Compat:** drop Documenter 0.27; `Documenter = "1"`, `julia = "1.10"`. Breaking
   release 0.3.0.
-- **MarkdownAST to text:** open, decided in step 2 — write Markdown directly from the
-  AST, or convert subtrees back to stdlib `Markdown` and keep `Markdown.plain`. First
-  check whether MarkdownAST supports that reverse conversion.
+- **MarkdownAST to text (decided in the spike):** plain MarkdownAST elements are
+  copied below a `Document` root and converted with
+  `convert(Markdown.MD, root)`, then written with `Markdown.plain`, as before. The
+  conversion errors on Documenter's own elements, and `copy_tree` cannot deepcopy
+  them (a `PageLink` holds the whole page). So `copy_tree` is called with a mapping
+  function that turns `PageLink`, `LocalLink` and `LocalImage` into `Link` and `Image`
+  with paths relative to the page. Documenter's block elements (`DocsNodesBlock`,
+  `IndexNode`, `ContentsNode`, `MultiOutput`, ...) get their own `render` methods.
 - **Output stability:** the output may change (anchor ids, the legacy `-1` anchors,
   docstring headers, source links), but every difference to the golden files of
   step 1 is listed and intended.
@@ -40,9 +45,11 @@ Template: `src/latex/LaTeXWriter.jl` of Documenter 1.20, a non-HTML writer that 
    (`test/golden/`). Add content assertions to `test/example/tests.jl` (headings,
    docstring blocks, cross-reference links, index and contents lists, code blocks,
    math, admonitions, footnotes, images), not only checks that files exist.
-2. **Spike.** A minimal `Markdown` writer on Documenter 1.20 that registers with the
-   selectors and renders only headings, paragraphs and code blocks from `page.mdast`.
-   Settle the MarkdownAST-to-text decision here.
+2. **Spike (done, branch `documenter-1`).** A minimal `Markdown` writer on Documenter
+   1.20 that registers with the selectors and renders headings with their anchors,
+   paragraphs, code blocks, `@meta`/`@setup` (no output) and the links and images of a
+   page. Everything else warns and is left out. Not done yet: `AnchoredInline`, all
+   Documenter blocks (step 3).
 3. **Node coverage.** List every node type `LaTeXWriter.jl` handles and implement a
    `render` method for each, plus a fallback that warns on unknown nodes instead of
    erroring.
