@@ -154,6 +154,9 @@ function render(io::IO, node::Node, docs::Documenter.DocsNode, page, doc)
     anchor = "<a id='$id' href='#$id'>#</a>"
     header = "**`$(Documenter.bindingstring(docs.object.binding))`** &mdash; " *
              "*$(Documenter.doccat(docs.object))*."
+    # The blank line first: if the previous docstring has no source link, the anchor, an
+    # inline element, would otherwise continue its last paragraph.
+    println(io)
     println(io, anchor, "\n", header, "\n\n")
     # Body. May contain several concatenated docstrings.
     for (docstring, result) in zip(docs.mdasts, docs.results)

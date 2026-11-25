@@ -15,6 +15,8 @@
   * `[text](@id name)` anchors around inline content are not written: the content is
     written without the anchor;
   * the entries of an `@index` with the same name are in the order of Documenter 1;
+  * every docstring starts with a blank line, so that its anchor starts a paragraph of its
+    own also if the previous docstring has no source link (without a remote repository);
   * fewer blank lines around docstrings and at the end of code blocks, and line
     endings of the sources are normalized to LF (done by Documenter).
 

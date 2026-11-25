@@ -79,3 +79,33 @@ build(path...) = read(joinpath(@__DIR__, "build", path...), String)
     @test occursin("```diagram\nA --> B\n```", extension)
     @test !occursin("ScriptBlock", extension)
 end
+
+
+# Without a remote repository (remotes = nothing, as for a repository that Documenter
+# cannot map to source links) the docstrings have no source links. The anchor of a
+# docstring must still start a paragraph of its own: it is an inline element and would
+# continue the last paragraph of the previous docstring.
+@testset "docstrings without source links" begin
+    mktempdir() do dir
+        mkpath(joinpath(dir, "src"))
+        write(joinpath(dir, "src", "index.md"), """
+            # Index
+
+            ```@meta
+            CurrentModule = $(Mod)
+            ```
+
+            ```@docs
+            func
+            T
+            ```
+            """)
+        makedocs(; root=dir, sitename="no source links", format=Markdown(),
+                 modules=[Mod], remotes=nothing, doctest=false,
+                 warnonly=[:cross_references, :missing_docs])
+        page = read(joinpath(dir, "build", "index.md"), String)
+        @test count("<a id='Main.Mod.", page) == 2
+        @test !occursin("class='documenter-source'", page)
+        @test !occursin(r"[^\n]\n<a id='[^']+' href='#", page)
+    end
+end
