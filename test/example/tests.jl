@@ -146,3 +146,21 @@ end
         end
     end
 end
+
+# One blank line between the blocks (markdownlint MD012), none at the start and one
+# newline at the end, but blank lines inside code blocks are kept.
+@testset "blank lines" begin
+    sbl = DocumenterMarkdown.single_blank_lines
+    @test sbl("\n\n# A\n\n\n\ntext\n\n\n") == "# A\n\ntext\n"
+    @test sbl("a\n  \n\nb") == "a\n\nb\n"
+    code = "```julia\nx = 1\n\n\ny = 2\n```"
+    @test sbl("a\n\n\n$code\n\n\nb\n") == "a\n\n$code\n\nb\n"
+    # a longer fence is only closed by a fence at least as long, also when indented
+    boxed = "    ````\n    ```\n\n\n    ```\n    ````"
+    @test sbl("$boxed\n\n\nb") == "$boxed\n\nb\n"
+    for (root, _, files) in walkdir(joinpath(@__DIR__, "build")), file in files
+        endswith(file, ".md") || continue
+        text = read(joinpath(root, file), String)
+        @test sbl(text) == text
+    end
+end

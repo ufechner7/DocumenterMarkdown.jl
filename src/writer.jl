@@ -58,9 +58,38 @@ function render(doc::Documenter.Document, settings::Markdown=Markdown())
         render(io, page.mdast.children, page, doc)
         path = mdext(page.build)
         tmp = string(path, ".tmp")
-        write(tmp, take!(io))
+        write(tmp, single_blank_lines(String(take!(io))))
         mv(tmp, path; force = true)
     end
+end
+
+# The text of a page with each run of blank lines reduced to one blank line, without
+# blank lines at the start and with one newline at the end (markdownlint MD012, MD047).
+# The elements are written each with a blank line before and after them, which is
+# simpler than tracking what was written before. Blank lines inside fenced code blocks
+# (also indented, in the box of a docstring) are content and are kept.
+function single_blank_lines(text::AbstractString)
+    out = String[]
+    fence = ""  # the opening fence of the current code block, e.g. "```"; "" outside
+    for line in split(text, '\n')
+        blank = isempty(strip(line))
+        if isempty(fence)
+            m = match(r"^\s*(`{3,}|~{3,})", line)
+            m === nothing || (fence = m.captures[1])
+            blank && (isempty(out) || isempty(out[end])) && continue
+            push!(out, blank ? "" : line)
+        else
+            # the closing fence: the same character, at least as long, nothing after it
+            m = match(r"^\s*(`{3,}|~{3,})\s*$", line)
+            m !== nothing && m.captures[1][1] == fence[1] &&
+                length(m.captures[1]) >= length(fence) && (fence = "")
+            push!(out, line)
+        end
+    end
+    while !isempty(out) && isempty(out[end])
+        pop!(out)
+    end
+    return join(out, '\n') * "\n"
 end
 
 function copy_assets(doc::Documenter.Document)
@@ -103,7 +132,7 @@ end
 
 # Metadata nodes (@meta blocks) and setup nodes (@setup blocks) have no output.
 render(io::IO, ::Node, ::Union{Documenter.MetaNode,Documenter.SetupNode}, page, doc) =
-    println(io, "\n")
+    nothing
 
 # The directory of the output file of a page, relative to the build directory.
 function pagedir(page, doc)

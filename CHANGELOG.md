@@ -21,7 +21,9 @@
   * every docstring starts with a blank line, so that its anchor starts a paragraph of its
     own also if the previous docstring has no source link (without a remote repository);
   * fewer blank lines around docstrings and at the end of code blocks, and line
-    endings of the sources are normalized to LF (done by Documenter).
+    endings of the sources are normalized to LF (done by Documenter);
+  * one blank line between blocks, none at the start of a page and one newline at the
+    end (markdownlint MD012, MD047); blank lines inside code blocks are kept.
 
 ## Version `v0.2.1`
 
